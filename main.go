@@ -2,48 +2,88 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 
-	"github.com/docker/docker/api/types"
 	"github.com/j2gg0s/gproxy/pkg"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func main() {
 	root := cobra.Command{
 		Use: "gproxy",
 	}
-	root.PersistentFlags().StringVar(&source, "source", "", "source image url")
-	root.PersistentFlags().StringVar(&dest, "dest", defaultDest, "dest acr's addr, {domain}/{namespace}/{name}:{tag}, name and tag is optional")
-	root.PersistentFlags().StringVar(&username, "username", defaultUsername, "username for auth")
-	root.PersistentFlags().StringVar(&password, "password", defaultPassword, "passowrd for auth")
-	root.PersistentFlags().BoolVar(&debug, "debug", false, "log level")
-
-	root.RunE = func(cmd *cobra.Command, args []string) error {
+	addCommonFlags(root.PersistentFlags())
+	root.PersistentPreRunE = func(*cobra.Command, []string) error {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		if debug {
 			zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		}
-
-		token := ""
-		if dest == defaultDest || username != defaultUsername || password != defaultPassword {
-			authConfig, err := json.Marshal(types.AuthConfig{Username: username, Password: password})
-			if err != nil {
-				return fmt.Errorf("invalid username/password: %v", err)
-			}
-			token = base64.URLEncoding.EncodeToString(authConfig)
+		return nil
+	}
+	root.RunE = func(*cobra.Command, []string) error {
+		r, err := pkg.NewRequest(source, dest, username, password)
+		if err != nil {
+			log.Warn().Err(err).Send()
+			return err
 		}
 
-		return pkg.ImageCopy(context.Background(), source, dest, token)
+		return pkg.ImageCopy(context.Background(), r)
 	}
 
+	httpServer := &cobra.Command{
+		Use: "http",
+	}
+	httpServer.PersistentFlags().IntVar(&port, "port", 8080, "http port")
+	httpServer.RunE = func(cmd *cobra.Command, args []string) error {
+		return pkg.RunGin(port)
+	}
+
+	remote := &cobra.Command{
+		Use: "remote",
+	}
+	addCommonFlags(remote.PersistentFlags())
+	remote.PersistentFlags().StringVar(&addr, "addr", "https://gproxy.j2gg0s.com", "server url")
+	remote.RunE = func(*cobra.Command, []string) error {
+		values := url.Values{}
+		values.Add("source", source)
+		values.Add("dest", dest)
+		values.Add("username", username)
+		values.Add("password", password)
+
+		resp, err := http.Get(fmt.Sprintf("%s?%s", addr, values.Encode()))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		log.Info().Int("status", resp.StatusCode).Str("body", string(body)).Msg("response")
+
+		return nil
+	}
+
+	root.AddCommand(httpServer)
+	root.AddCommand(remote)
 	if err := root.Execute(); err != nil {
 		log.Fatal().Err(err)
 	}
+}
+
+func addCommonFlags(set *pflag.FlagSet) {
+	set.StringVar(&source, "source", "", "source image url")
+	set.StringVar(&dest, "dest", pkg.DefaultDest, "dest acr's addr, {domain}/{namespace}/{name}:{tag}, name and tag is optional")
+	set.StringVar(&username, "username", pkg.DefaultUsername, "username for auth")
+	set.StringVar(&password, "password", pkg.DefaultPassword, "passowrd for auth")
+	set.BoolVar(&debug, "debug", false, "log level")
 }
 
 var (
@@ -53,7 +93,7 @@ var (
 	password string
 	debug    bool
 
-	defaultDest     string = "registry.cn-huhehaote.aliyuncs.com/gproxy"
-	defaultUsername string = "gproxy@j2gg0s"
-	defaultPassword string = "Aliyun123456"
+	addr string
+
+	port int
 )

@@ -4,7 +4,7 @@
 可以绕过一些极端的网络问题.
 
 ## Install and Usage
-``go get github.com/j2gg0s/gproxy/cmd/gproxy``
+``go get -u github.com/j2gg0s/gproxy``
 
 使用默认的 registry.cn-huhehaote.aliyuncs.com/gproxy
 

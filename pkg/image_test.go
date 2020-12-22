@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestImageCopy(t *testing.T) {
+func TestImageNormalized(t *testing.T) {
 	fixtures := []struct {
 		source string
 		domain string
