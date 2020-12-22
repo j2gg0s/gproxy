@@ -48,7 +48,7 @@ func main() {
 		Use: "remote",
 	}
 	addCommonFlags(remote.PersistentFlags())
-	remote.PersistentFlags().StringVar(&addr, "addr", "https://gproxy.j2gg0s.com", "server url")
+	remote.PersistentFlags().StringVar(&addr, "addr", "http://localhost:8080", "server url")
 	remote.RunE = func(*cobra.Command, []string) error {
 		values := url.Values{}
 		values.Add("source", source)
@@ -83,7 +83,7 @@ func addCommonFlags(set *pflag.FlagSet) {
 	set.StringVar(&dest, "dest", pkg.DefaultDest, "dest acr's addr, {domain}/{namespace}/{name}:{tag}, name and tag is optional")
 	set.StringVar(&username, "username", pkg.DefaultUsername, "username for auth")
 	set.StringVar(&password, "password", pkg.DefaultPassword, "passowrd for auth")
-	set.BoolVar(&debug, "debug", false, "log level")
+	set.BoolVar(&debug, "debug", false, "enable debug info")
 }
 
 var (
