@@ -11,7 +11,11 @@ import (
 func RunGin(port int) error {
 	engine := gin.Default()
 
-	engine.GET("/", func(c *gin.Context) {
+	engine.Any("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "HELLO")
+	})
+
+	engine.GET("/api", func(c *gin.Context) {
 		source, ok := c.GetQuery("source")
 		if !ok {
 			log.Warn().Msgf("source is reuqired")
