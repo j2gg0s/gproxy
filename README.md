@@ -7,7 +7,9 @@
 ``go get github.com/j2gg0s/gproxy/cmd/gproxy``
 
 使用默认的 registry.cn-huhehaote.aliyuncs.com/gproxy
+
 ``gproxy --source alpine:3``
 
 指定具体的 acr repo
+
 ``gproxy --source alpine:3 --dest registry.cn-hangzhou.aliyuncs.com/xxx/xxx --username xxx --password xxx``

@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types"
-	"github.com/j2gg0s/gproxy"
+	"github.com/j2gg0s/gproxy/pkg"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -38,7 +38,7 @@ func main() {
 			token = base64.URLEncoding.EncodeToString(authConfig)
 		}
 
-		return gproxy.ImageCopy(context.Background(), source, dest, token)
+		return pkg.ImageCopy(context.Background(), source, dest, token)
 	}
 
 	if err := root.Execute(); err != nil {

@@ -1,4 +1,4 @@
-package gproxy
+package pkg
 
 import (
 	"context"
